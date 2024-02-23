@@ -1,8 +1,8 @@
 TOKEN_TYPES = [
     ("def", "\\bdef\\b"),
+    ("end", "\\bend\\b"),
     ("identifier", "\\b[a-zA-Z]+\\b"),
     ("integer", "\\b[0-9]+\\b"),
-    ("colon", ":"),
     ("oparent", "\\("),
     ("cparent", "\\)"),
     ("comma", ","), 
@@ -85,7 +85,6 @@ function parse_arg_names(tokens::Vector)
         end
     end
     consume(tokens, "cparent")
-    consume(tokens, "colon")
     return arg_names
 end
 
@@ -131,5 +130,32 @@ function peek(tokens::Vector, expected_type::String, offset::Integer=1)
     return tokens[offset].type == expected_type
 end
 
+function generate(tree)
+    if isa(tree, DefinitionNode)
+        arg_names = join(tree.arg_names, ",")
+        body = generate(tree.body)
+        return "def $(tree.name)($(arg_names)):return $(body)"
+    end
+
+    if isa(tree, CallNode)
+        return "$(tree.name)($(join([generate(expr) for expr in tree.arg_exprs],",")))"
+    end
+
+    if isa(tree, IntegerNode)
+        return string(tree.value)
+    end
+
+    if isa(tree, VarRefNode)
+        return tree.value
+    end
+end
+
 tokens = tokenize(read("test.src", String)) 
 tree = parse_def(tokens)
+generated = generate(tree)
+RUNTIME = "def add(x,y):return x+y"
+RUNNING_F = "print(f(1,2))"
+pyfile = open("julia_compilation.py", "w")
+write(pyfile,RUNTIME * "\n" *generated * "\n" * RUNNING_F) 
+close(pyfile)
+run(`python3.10 julia_compilation.py`)

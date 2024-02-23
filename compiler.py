@@ -10,7 +10,7 @@ TOKEN_TYPES = [
         ['comma', r','], 
 ]
 
-class Tokeinzer:
+class Tokenizer:
     def __init__(self, code) -> None:
         self.code = code
 
@@ -145,7 +145,7 @@ class Generator:
         raise RuntimeError(f"Unexpected node type: {node.__class__}")
 
 
-tokens = Tokeinzer(open("test.src").read()).tokenize()
+tokens = Tokenizer(open("test.src").read()).tokenize()
 tree = Parser(tokens).parse()
 generator = Generator()
 generated = generator.generate(tree)
